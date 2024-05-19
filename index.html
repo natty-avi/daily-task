@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Daily Links</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        h1 {
+            text-align: center;
+        }
+        /* .grid-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+            margin-left: -500px;
+        } */
+        .noteWrapper {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        h2 {
+            margin-top: 0;
+            width: fit-content;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0 !important;
+        }
+        li {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        a {
+            text-decoration: none;
+            color: #007BFF;
+            font-weight: bold;
+            flex-grow: 1;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .edit-button, .save-button, .add-button, .delete-container-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            padding: 1px 5px;
+            cursor: pointer;
+            border-radius: 4px;
+            z-index: 1;
+        }
+        .add-button {
+            right: 70px;
+        }
+        .save-button {
+            display: none;
+        }
+        .edit-icon {
+            margin-right: 10px;
+            cursor: pointer;
+            display: none;
+        }
+        .edit-form {
+            display: none;
+        }
+        .delete-icon {
+            display: none;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .sticky-notepad {
+            /* position: absolute; */
+            /* top: 10%; */
+            /* right: 15px; */
+            width: 100%;
+            resize: vertical;
+            display: flex;
+            flex-direction: column;
+            overflow: auto;
+            height: calc(100vh - 200px); /* Full height minus padding */
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            
+        }
+        .sticky-notepad textarea {
+           
+            flex-grow: 1; /* Take up remaining space */
+            resize: none; /* Prevent resizing the textarea */
+            margin-bottom: 10px; /* Space between textarea and buttons */
+        
+        }
+
+        .sticky-notepad .button-container {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .sticky-notepad button {
+            width: 48%;
+            padding: 5px;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 5px;
+            align-self: flex-start; /* Align buttons to the left */
+        }
+
+        .settings-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 50%;
+            font-size: 20px;
+            z-index: 1000;
+        }
+        .add-container-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: rgba(0, 123, 255, 0.8);
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            line-height: 50px;
+            text-align: center;
+            cursor: pointer;
+            z-index: 999;
+        }
+        .noteWrapper .delete-button {
+            display: none;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .sticky-notepad button {
+            width: 40%;
+            padding: 5px;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .noteParent{
+            display: flex;
+            flex-wrap: wrap;
+        }
+    </style>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+</head>
+<body>
+    <h1>Daily Task</h1>
+    <button class="settings-button" onclick="toggleGlobalSettings()">⚙️</button>
+    <button class="add-container-button" onclick="addContainer()">+</button>
+    <div class="container-fluid">
+        <div class="row" id="grid-container">
+            <div class="col-9 noteParent row g-3">
+                
+            </div>
+            
+        
+    
+            <div class="col-3">
+                <div class="sticky-notepad">
+                    <h2>notes</h2>
+                    <textarea id="sticky-note" placeholder="Write your notes here..."></textarea>
+                    <div class="button-container">
+                        <button onclick="saveNote()">Save</button>
+                        <button onclick="deleteNote()">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        window.addEventListener('load', () => {
+            loadSavedLinks();
+            loadStickyNote();
+        });
+
+        function saveLinksToStorage() {
+            const containers = document.querySelectorAll('.col-4');
+            const savedLinks = [];
+            containers.forEach(container => {
+                const links = container.querySelectorAll('ul li a');
+                const containerLinks = [];
+                links.forEach(link => {
+                    containerLinks.push({
+                        name: link.textContent,
+                        url: link.href
+                    });
+                });
+                savedLinks.push(containerLinks);
+            });
+            localStorage.setItem('dailyLinks', JSON.stringify(savedLinks));
+        }
+
+        function loadSavedLinks() {
+            const savedLinksJSON = localStorage.getItem('dailyLinks');
+            if (savedLinksJSON) {
+                const savedLinks = JSON.parse(savedLinksJSON);
+                savedLinks.forEach((containerLinks, index) => {
+                    const newContainer = document.createElement('div');
+                    newContainer.className = 'col-4';
+                    newContainer.setAttribute('data-index', index);
+                    newContainer.innerHTML = `
+                        <div class="noteWrapper">
+                            <h2 contenteditable="true">Website</h2>
+                            <ul></ul>
+                            <button class="save-button" onclick="saveContainer(${index})">Save</button>
+                            <button class="add-button" onclick="addLink(${index})">Add</button>
+                            <button class="edit-button" onclick="editContainer(${index})">Edit</button>
+                            <button class="delete-container-button hidden" onclick="deleteContainer(${index})">Delete</button>
+                        </div>
+                    `;
+                    document.querySelector('.noteParent').appendChild(newContainer);
+
+                    containerLinks.forEach(linkData => {
+                        const newLi = document.createElement('li');
+                        const newLink = document.createElement('a');
+                        newLink.href = linkData.url;
+                        newLink.textContent = linkData.name;
+                        newLink.setAttribute('target', '_blank');
+
+                        const editIcon = document.createElement('span');
+                        editIcon.className = 'edit-icon';
+                        editIcon.textContent = '✏️';
+                        editIcon.setAttribute('onclick', 'showEditForm(event, this)');
+
+                        const deleteIcon = document.createElement('span');
+                        deleteIcon.className = 'delete-icon';
+                        deleteIcon.textContent = '🗑️';
+                        deleteIcon.setAttribute('onclick', 'deleteLink(this)');
+
+                        const editForm = document.createElement('div');
+                        editForm.className = 'edit-form';
+                        const newNameInput = document.createElement('input');
+                        newNameInput.type = 'text';
+                        newNameInput.className = 'edit-name';
+                        newNameInput.value = linkData.name;
+                        const newUrlInput = document.createElement('input');
+                        newUrlInput.type = 'text';
+                        newUrlInput.className = 'edit-url';
+                        newUrlInput.value = linkData.url;
+                        const newSaveButton = document.createElement('button');
+                        newSaveButton.textContent = 'Save';
+                        newSaveButton.setAttribute('onclick', 'saveLink(this)');
+
+                        editForm.appendChild(newNameInput);
+                        editForm.appendChild(newUrlInput);
+                        editForm.appendChild(newSaveButton);
+
+                        newLi.appendChild(newLink);
+                        newLi.appendChild(editIcon);
+                        newLi.appendChild(deleteIcon);
+                        newLi.appendChild(editForm);
+
+                        newContainer.querySelector('ul').appendChild(newLi);
+                    });
+                });
+            }
+        }
+
+        function showEditForm(event, icon) {
+            event.stopPropagation();
+            const editForm = icon.parentElement.querySelector('.edit-form');
+            const editIcon = icon.parentElement.querySelector('.edit-icon');
+            const deleteIcon = icon.parentElement.querySelector('.delete-icon');
+            const link = icon.parentElement.querySelector('a');
+            const isVisible = editForm.style.display === 'flex';
+            
+
+            // link.style.display = 'none';
+            editIcon.style.display = 'none';
+            deleteIcon.style.display = 'none';
+            document.querySelectorAll('.edit-form').forEach(form => form.style.display = 'none');
+            if (!isVisible) editForm.style.display = 'block';
+        }
+
+        function saveLink(button) {
+            const form = button.parentElement;
+            const nameInput = form.querySelector('.edit-name');
+            const urlInput = form.querySelector('.edit-url');
+            const editIcon = form.parentElement.querySelector('.edit-icon')
+            const deleteIcon = form.parentElement.querySelector('.delete-icon')
+            const link = form.parentElement.querySelector('a');
+
+            link.textContent = nameInput.value;
+            link.href = urlInput.value;
+            link.style.display = 'block';
+            form.style.display = 'none';
+            editIcon.style.display = 'block';
+            deleteIcon.style.display = 'block';
+            saveLinksToStorage();
+        }
+
+        function editContainer(index) {
+            const container = document.querySelector(`.col-4[data-index="${index}"]`);
+            const editButton = container.querySelector('.edit-button');
+            const saveButton = container.querySelector('.save-button');
+            const icons = container.querySelectorAll('.edit-icon, .delete-icon');
+
+            icons.forEach(icon => {
+                icon.style.display = 'inline';
+            });
+
+            editButton.style.display = 'none';
+            saveButton.style.display = 'inline';
+        }
+
+        function saveContainer(index) {
+            const container = document.querySelector(`.col-4[data-index="${index}"]`);
+            const editButton = container.querySelector('.edit-button');
+            const saveButton = container.querySelector('.save-button');
+            const icons = container.querySelectorAll('.edit-icon, .delete-icon');
+
+            icons.forEach(icon => {
+                icon.style.display = 'none';
+            });
+
+            editButton.style.display = 'inline';
+            saveButton.style.display = 'none';
+            saveLinksToStorage();
+        }
+
+        function addLink(index) {
+            const container = document.querySelector(`.col-4[data-index="${index}"] ul`);
+            const newLi = document.createElement('li');
+            const newLink = document.createElement('a');
+            newLink.href = '#';
+            newLink.textContent = 'New Website';
+            newLink.setAttribute('target', '_blank');
+
+            const editIcon = document.createElement('span');
+            editIcon.className = 'edit-icon';
+            editIcon.textContent = '✏️';
+            editIcon.setAttribute('onclick', 'showEditForm(event, this)');
+
+            const deleteIcon = document.createElement('span');
+            deleteIcon.className = 'delete-icon';
+            deleteIcon.textContent = '🗑️';
+            deleteIcon.setAttribute('onclick', 'deleteLink(this)');
+
+            const editForm = document.createElement('div');
+            editForm.className = 'edit-form';
+            const newNameInput = document.createElement('input');
+            newNameInput.type = 'text';
+            newNameInput.className = 'edit-name';
+            newNameInput.value = 'New Website';
+            const newUrlInput = document.createElement('input');
+            newUrlInput.type = 'text';
+            newUrlInput.className = 'edit-url';
+            newUrlInput.value = '#';
+            const newSaveButton = document.createElement('button');
+            newSaveButton.textContent = 'Save';
+            newSaveButton.setAttribute('onclick', 'saveLink(this)');
+
+            editForm.appendChild(newNameInput);
+            editForm.appendChild(newUrlInput);
+            editForm.appendChild(newSaveButton);
+
+            newLi.appendChild(newLink);
+            newLi.appendChild(editIcon);
+            newLi.appendChild(deleteIcon);
+            newLi.appendChild(editForm);
+            container.appendChild(newLi);
+            saveLinksToStorage();
+        }
+
+        function deleteLink(icon) {
+            const li = icon.parentElement;
+            li.parentElement.removeChild(li);
+            saveLinksToStorage();
+        }
+
+        function saveNote() {
+            const note = document.getElementById('sticky-note').value;
+            localStorage.setItem('stickyNote', note);
+        }
+
+        function loadStickyNote() {
+            const savedNote = localStorage.getItem('stickyNote');
+            if (savedNote) {
+                document.getElementById('sticky-note').value = savedNote;
+            }
+        }
+
+        function deleteNote() {
+            document.getElementById('sticky-note').value = '';
+            localStorage.removeItem('stickyNote');
+        }
+
+        function addContainer() {
+            const containerIndex = document.querySelectorAll('.col-4').length;
+            const newContainer = document.createElement('div');
+            newContainer.className = 'col-4';
+            newContainer.setAttribute('data-index', containerIndex);
+            newContainer.innerHTML = `
+                <div class="noteWrapper">
+                    <h2 contenteditable="true">Website</h2>
+                    <ul></ul>
+                    <button class="save-button" onclick="saveContainer(${containerIndex})">Save</button>
+                    <button class="add-button" onclick="addLink(${containerIndex})">Add</button>
+                    <button class="edit-button" onclick="editContainer(${containerIndex})">Edit</button>
+                    <button class="delete-container-button hidden" onclick="deleteContainer(${containerIndex})">Delete</button>
+                </div>
+            `;
+            document.querySelector('.noteParent').appendChild(newContainer);
+
+            saveLinksToStorage(); // Save all containers to local storage
+        }
+
+        function deleteContainer(index) {
+            const container = document.querySelector(`.col-4[data-index='${index}']`);
+            container.parentElement.removeChild(container);
+            saveLinksToStorage();
+        }
+
+        function toggleGlobalSettings() {
+            const deleteButtons = document.querySelectorAll('.delete-container-button');
+            deleteButtons.forEach(button => {
+                button.classList.toggle('hidden');
+            });
+        }
+    </script>
+</body>
+</html>
